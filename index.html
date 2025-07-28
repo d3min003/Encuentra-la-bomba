@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuentra la Bomba - Edición Mejorada</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .game-container {
+            background: rgba(25, 30, 50, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            max-width: 850px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+        
+        .game-container::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(100, 150, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(100, 200, 255, 0.7);
+            color: #4fc3f7;
+            position: relative;
+        }
+        
+        h1::after {
+            content: "";
+            display: block;
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #4fc3f7, transparent);
+            margin: 10px auto;
+        }
+        
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(10, 15, 30, 0.6);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 25px 0;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+        
+        .stat {
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            color: #4fc3f7;
+            margin-top: 5px;
+        }
+        
+        .percentage-container {
+            width: 100%;
+            height: 45px;
+            background: rgba(10, 15, 30, 0.6);
+            border-radius: 25px;
+            margin: 25px 0;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+        
+        .percentage-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00c853, #64dd17);
+            width: 100%;
+            transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+            position: relative;
+        }
+        
+        .percentage-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.3rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            aspect-ratio: 1/1;
+            background: rgba(10, 15, 30, 0.6);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+        
+        .block {
+            background: rgba(50, 70, 120, 0.4);
+            border: 2px solid rgba(100, 150, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .block::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(100, 200, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .block:hover {
+            background: rgba(70, 100, 180, 0.5);
+            transform: scale(1.05);
+            border-color: rgba(100, 180, 255, 0.4);
+        }
+        
+        .block:hover::before {
+            opacity: 1;
+        }
+        
+        .block.selected {
+            background: rgba(100, 200, 100, 0.3);
+            transform: scale(0.95);
+            border-color: rgba(100, 255, 100, 0.3);
+        }
+        
+        .block.bomb {
+            background: linear-gradient(45deg, #ff5252, #b71c1c);
+            box-shadow: 0 0 20px rgba(255, 82, 82, 0.7);
+            transform: scale(1.1);
+            border-color: #ff5252;
+            animation: pulse-danger 1.5s infinite;
+        }
+        
+        .block.safe {
+            background: rgba(100, 200, 100, 0.2);
+            border-color: rgba(100, 255, 100, 0.3);
+        }
+        
+        .block.hint {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: rgba(255, 215, 0, 0.4);
+            animation: pulse-hint 2s infinite;
+        }
+        
+        @keyframes pulse-danger {
+            0% { box-shadow: 0 0 10px rgba(255, 82, 82, 0.7); }
+            50% { box-shadow: 0 0 25px rgba(255, 82, 82, 0.9); }
+            100% { box-shadow: 0 0 10px rgba(255, 82, 82, 0.7); }
+        }
+        
+        @keyframes pulse-hint {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            padding: 14px 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn.reset {
+            background: linear-gradient(45deg, #00c853, #64dd17);
+        }
+        
+        .btn.hint {
+            background: linear-gradient(45deg, #ff9800, #ffc107);
+        }
+        
+        .btn.new {
+            background: linear-gradient(45deg, #2196f3, #4fc3f7);
+        }
+        
+        .level-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .level {
+            padding: 8px 20px;
+            background: rgba(50, 70, 120, 0.4);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+        
+        .level:hover {
+            background: rgba(70, 100, 180, 0.6);
+            transform: translateY(-3px);
+        }
+        
+        .level.active {
+            background: linear-gradient(45deg, #2196f3, #4fc3f7);
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.5);
+        }
+        
+        .message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .message.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .message-content {
+            background: rgba(25, 30, 50, 0.95);
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            max-width: 80%;
+            transform: scale(0.8);
+            transition: transform 0.5s ease;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            box-shadow: 0 0 40px rgba(100, 200, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .message.show .message-content {
+            transform: scale(1);
+        }
+        
+        .message-content::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(100, 150, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+            animation: rotate 20s linear infinite;
+        }
+        
+        .message h2 {
+            font-size: 3.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(100, 200, 255, 0.7);
+        }
+        
+        .win-title {
+            color: #64dd17;
+        }
+        
+        .lose-title {
+            color: #ff5252;
+        }
+        
+        .message p {
+            font-size: 1.8rem;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            color: #e0f7fa;
+        }
+        
+        .bomb-icon {
+            font-size: 6rem;
+            margin-bottom: 30px;
+            animation: pulse 1.5s infinite;
+            color: #ff5252;
+            text-shadow: 0 0 20px rgba(255, 82, 82, 0.7);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .trophy {
+            font-size: 6rem;
+            margin-bottom: 30px;
+            animation: rotate-trophy 3s infinite ease-in-out;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+        }
+        
+        @keyframes rotate-trophy {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg); }
+            100% { transform: rotateY(360deg); }
+        }
+        
+        .difficulty-info {
+            background: rgba(10, 15, 30, 0.6);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+        
+        .difficulty-info p {
+            font-size: 1.1rem;
+            margin: 10px 0;
+            color: #bbdefb;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-container {
+                gap: 4px;
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .block {
+                font-size: 1rem;
+            }
+            
+            .btn {
+                padding: 12px 15px;
+                font-size: 1rem;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .message-content {
+                padding: 30px;
+            }
+            
+            .message h2 {
+                font-size: 2.5rem;
+            }
+            
+            .message p {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>ENCUENTRA LA BOMBA</h1>
+        
+        <div class="stats-container">
+            <div class="stat">
+                <span>NIVEL</span>
+                <div class="stat-value" id="level">1</div>
+            </div>
+            <div class="stat">
+                <span>PORCENTAJE</span>
+                <div class="stat-value" id="percentage">100%</div>
+            </div>
+            <div class="stat">
+                <span>INTENTOS</span>
+                <div class="stat-value" id="attempts">0</div>
+            </div>
+        </div>
+        
+        <div class="percentage-container">
+            <div class="percentage-bar" id="percentageBar" style="width: 100%"></div>
+            <div class="percentage-text" id="percentageText">100% de probabilidad de ganar</div>
+        </div>
+        
+        <div class="difficulty-info">
+            <p>Nivel <span id="currentLevel">1</span>: <span id="bombCount">1 bomba</span> y <span id="safeBlocks">80 bloques seguros</span></p>
+            <p>Cada selección segura reduce tu porcentaje en <span id="penalty">1.25%</span></p>
+        </div>
+        
+        <div class="level-container">
+            <div class="level active" data-level="1">Nivel 1</div>
+            <div class="level" data-level="2">Nivel 2</div>
+            <div class="level" data-level="3">Nivel 3</div>
+            <div class="level" data-level="4">Nivel 4</div>
+            <div class="level" data-level="5">Nivel 5</div>
+        </div>
+        
+        <div class="grid-container" id="grid"></div>
+        
+        <div class="controls">
+            <button class="btn reset" id="resetBtn">
+                <i class="fas fa-redo"></i> Reiniciar
+            </button>
+            <button class="btn hint" id="hintBtn">
+                <i class="fas fa-lightbulb"></i> Pista (3)
+            </button>
+            <button class="btn new" id="newGameBtn">
+                <i class="fas fa-plus-circle"></i> Nuevo Juego
+            </button>
+        </div>
+    </div>
+    
+    <div class="message" id="message">
+        <div class="message-content">
+            <div class="bomb-icon" id="resultIcon">💣</div>
+            <h2 id="messageTitle">¡HAS GANADO!</h2>
+            <p id="messageText">Encontraste la bomba con 98.75% de probabilidad</p>
+            <button class="btn reset" id="playAgainBtn">
+                <i class="fas fa-play"></i> Jugar de nuevo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('grid');
+            const levelEl = document.getElementById('level');
+            const percentageEl = document.getElementById('percentage');
+            const attemptsEl = document.getElementById('attempts');
+            const percentageBar = document.getElementById('percentageBar');
+            const percentageText = document.getElementById('percentageText');
+            const resetBtn = document.getElementById('resetBtn');
+            const hintBtn = document.getElementById('hintBtn');
+            const newGameBtn = document.getElementById('newGameBtn');
+            const message = document.getElementById('message');
+            const messageTitle = document.getElementById('messageTitle');
+            const messageText = document.getElementById('messageText');
+            const playAgainBtn = document.getElementById('playAgainBtn');
+            const resultIcon = document.getElementById('resultIcon');
+            const levels = document.querySelectorAll('.level');
+            const bombCountEl = document.getElementById('bombCount');
+            const safeBlocksEl = document.getElementById('safeBlocks');
+            const penaltyEl = document.getElementById('penalty');
+            const currentLevelEl = document.getElementById('currentLevel');
+            
+            // Configuración de niveles
+            const levelsConfig = {
+                1: { bombs: 1, safeBlocks: 80, penalty: 1.25 },
+                2: { bombs: 2, safeBlocks: 79, penalty: 1.27 },
+                3: { bombs: 3, safeBlocks: 78, penalty: 1.29 },
+                4: { bombs: 4, safeBlocks: 77, penalty: 1.32 },
+                5: { bombs: 5, safeBlocks: 76, penalty: 1.35 }
+            };
+            
+            let gameState = {
+                level: 1,
+                bombs: 1,
+                safeBlocks: 80,
+                penalty: 1.25,
+                totalBlocks: 81,
+                bombPositions: [],
+                attempts: 0,
+                currentPercentage: 100,
+                gameActive: true,
+                hints: 3
+            };
+            
+            // Iniciar juego
+            function initGame(level = 1) {
+                const config = levelsConfig[level];
+                gameState = {
+                    level: level,
+                    bombs: config.bombs,
+                    safeBlocks: config.safeBlocks,
+                    penalty: config.penalty,
+                    totalBlocks: 81,
+                    bombPositions: [],
+                    attempts: 0,
+                    currentPercentage: 100,
+                    gameActive: true,
+                    hints: 3
+                };
+                
+                // Actualizar UI
+                levelEl.textContent = level;
+                percentageEl.textContent = '100%';
+                attemptsEl.textContent = '0';
+                updatePercentage();
+                updateLevelInfo();
+                hintBtn.innerHTML = `<i class="fas fa-lightbulb"></i> Pista (${gameState.hints})`;
+                
+                // Limpiar cuadrícula
+                grid.innerHTML = '';
+                
+                // Crear bloques
+                for (let i = 0; i < 81; i++) {
+                    const block = document.createElement('div');
+                    block.classList.add('block');
+                    block.dataset.index = i;
+                    
+                    block.addEventListener('click', () => handleBlockClick(block));
+                    
+                    grid.appendChild(block);
+                }
+                
+                // Colocar bombas aleatoriamente
+                placeBombs();
+            }
+            
+            // Colocar bombas en posiciones aleatorias
+            function placeBombs() {
+                gameState.bombPositions = [];
+                const positions = new Set();
+                
+                while (positions.size < gameState.bombs) {
+                    const randomPos = Math.floor(Math.random() * 81);
+                    positions.add(randomPos);
+                }
+                
+                gameState.bombPositions = Array.from(positions);
+            }
+            
+            // Manejar clic en bloque
+            function handleBlockClick(block) {
+                if (!gameState.gameActive) return;
+                
+                const index = parseInt(block.dataset.index);
+                
+                // Bloquear para que no se pueda volver a hacer clic
+                block.classList.add('selected');
+                block.style.pointerEvents = 'none';
+                
+                gameState.attempts++;
+                attemptsEl.textContent = gameState.attempts;
+                
+                // Comprobar si es bomba
+                if (gameState.bombPositions.includes(index)) {
+                    block.classList.add('bomb');
+                    gameState.gameActive = false;
+                    showMessage(false, gameState.currentPercentage);
+                } else {
+                    block.classList.add('safe');
+                    gameState.safeBlocks--;
+                    
+                    // Reducir porcentaje
+                    gameState.currentPercentage = Math.max(0, gameState.currentPercentage - gameState.penalty);
+                    updatePercentage();
+                    
+                    // Comprobar si quedan bloques seguros
+                    if (gameState.safeBlocks === 0) {
+                        gameState.gameActive = false;
+                        showMessage(true, gameState.currentPercentage);
+                    }
+                    
+                    // Comprobar si el porcentaje llegó a 0
+                    if (gameState.currentPercentage <= 0) {
+                        gameState.gameActive = false;
+                        showMessage(false, 0);
+                    }
+                }
+            }
+            
+            // Actualizar porcentaje en UI
+            function updatePercentage() {
+                percentageBar.style.width = `${gameState.currentPercentage}%`;
+                percentageText.textContent = `${gameState.currentPercentage.toFixed(2)}% de probabilidad de ganar`;
+                percentageEl.textContent = `${gameState.currentPercentage.toFixed(2)}%`;
+                
+                // Cambiar color según el porcentaje
+                if (gameState.currentPercentage < 30) {
+                    percentageBar.style.background = 'linear-gradient(90deg, #ff5252, #ff9800)';
+                } else if (gameState.currentPercentage < 60) {
+                    percentageBar.style.background = 'linear-gradient(90deg, #ff9800, #ffc107)';
+                } else {
+                    percentageBar.style.background = 'linear-gradient(90deg, #00c853, #64dd17)';
+                }
+            }
+            
+            // Mostrar mensaje de resultado
+            function showMessage(isWin, percentage) {
+                if (isWin) {
+                    messageTitle.textContent = '¡HAS GANADO!';
+                    messageTitle.className = 'win-title';
+                    messageText.textContent = `Encontraste todas las bombas con ${percentage.toFixed(2)}% de probabilidad`;
+                    resultIcon.innerHTML = '🏆';
+                    resultIcon.className = 'trophy';
+                } else {
+                    messageTitle.textContent = '¡HAS PERDIDO!';
+                    messageTitle.className = 'lose-title';
+                    messageText.textContent = percentage > 0 ? 
+                        `Activaste una bomba con ${percentage.toFixed(2)}% de probabilidad` : 
+                        'Tu porcentaje de victoria llegó a 0%';
+                    resultIcon.innerHTML = '💣';
+                    resultIcon.className = 'bomb-icon';
+                    
+                    // Mostrar todas las bombas
+                    gameState.bombPositions.forEach(pos => {
+                        const bombBlock = document.querySelector(`.block[data-index="${pos}"]`);
+                        bombBlock.classList.add('bomb');
+                    });
+                }
+                
+                message.classList.add('show');
+            }
+            
+            // Manejar pista
+            function useHint() {
+                if (gameState.hints > 0 && gameState.gameActive) {
+                    // Encontrar un bloque seguro no revelado
+                    const safeBlocks = Array.from(document.querySelectorAll('.block:not(.selected)'))
+                        .filter(block => !gameState.bombPositions.includes(parseInt(block.dataset.index)));
+                    
+                    if (safeBlocks.length > 0) {
+                        const randomBlock = safeBlocks[Math.floor(Math.random() * safeBlocks.length)];
+                        randomBlock.classList.add('hint');
+                        
+                        setTimeout(() => {
+                            randomBlock.classList.remove('hint');
+                        }, 2000);
+                        
+                        gameState.hints--;
+                        hintBtn.innerHTML = `<i class="fas fa-lightbulb"></i> Pista (${gameState.hints})`;
+                    }
+                }
+            }
+            
+            // Actualizar información de nivel
+            function updateLevelInfo() {
+                bombCountEl.textContent = `${gameState.bombs} ${gameState.bombs === 1 ? 'bomba' : 'bombas'}`;
+                safeBlocksEl.textContent = `${gameState.safeBlocks} bloques seguros`;
+                penaltyEl.textContent = `${gameState.penalty.toFixed(2)}%`;
+                currentLevelEl.textContent = gameState.level;
+            }
+            
+            // Event listeners
+            resetBtn.addEventListener('click', () => initGame(gameState.level));
+            newGameBtn.addEventListener('click', () => initGame(gameState.level));
+            playAgainBtn.addEventListener('click', () => {
+                message.classList.remove('show');
+                initGame(gameState.level);
+            });
+            hintBtn.addEventListener('click', useHint);
+            
+            // Niveles
+            levels.forEach(level => {
+                level.addEventListener('click', () => {
+                    levels.forEach(l => l.classList.remove('active'));
+                    level.classList.add('active');
+                    const newLevel = parseInt(level.dataset.level);
+                    initGame(newLevel);
+                });
+            });
+            
+            // Iniciar el juego al cargar
+            initGame();
+        });
+    </script>
+</body>
+</html>
